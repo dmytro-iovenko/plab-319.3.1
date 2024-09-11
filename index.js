@@ -2,11 +2,13 @@ import express from "express";
 const app = express();
 import db from "./db.js";
 import error from "./utils/error.js";
+import { Decimal128 } from "mongodb";
 
 const port = 3000;
 
 // Parsing Body Middleware
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 // Logging Middleware
 app.use((req, res, next) => {
@@ -44,12 +46,64 @@ app.get("/listings/:id", async (req, res, next) => {
   }
 });
 // 	Get /listings/query: Get listings based on specific query parameters.
+app.get("/listings/query", async (req, res, next) => {
+  try {
+    const query = getQueryParameters(req.query);
+    const collection = db.collection("listingsAndReviews");
+    const results = await collection.find(query).toArray();
+    if (results) res.json(results).status(200);
+    else next();
+  } catch (err) {
+    next(err);
+  }
+});
 
 // Query Parameters:
-// 	property_type: Filter listings by property type (e.g., "Apartment", "Condominium").
-// 	accommodates: Filter listings by the number of people accommodated.
-// 	price: Filter listings by price range.
-// 	min_reviews: Filter listings by minimum number of reviews.
+function getQueryParameters(params) {
+  const query = {};
+  for (const param in params) {
+    switch (param) {
+      // property_type: Filter listings by property type (e.g., "Apartment", "Condominium").
+      case "property_type":
+        query[param] = params[param];
+        break;
+      // accommodates: Filter listings by the number of people accommodated.
+      case "accommodates":
+        query[param] = Number(params[param]);
+        break;
+      // price: Filter listings by price range.
+      case "price":
+        const price = params[param].split("-");
+        if (price.length > 1) {
+          query[param] = {};
+          const [min, max] = price;
+          if (min) query[param].$gte = Decimal128.fromString(min);
+          if (max) query[param].$lte = Decimal128.fromString(max);
+        } else {
+          query[param] = Decimal128.fromString(price[0]);
+        }
+        break;
+      // min_reviews: Filter listings by minimum number of reviews.
+      case "min_reviews":
+        // filter using number_of_reviews
+        query.number_of_reviews = { $gte: Number(params[param]) };
+        // OR by comparing the size of the array
+        // $expr allows the use of aggregation expressions within the find query
+        query.$expr = {
+          $gte: [
+            {
+              // $size gets the number of elements in the reviews array
+              $size: "$reviews",
+            },
+            Number(params[param]),
+          ],
+        };
+        break;
+    }
+  }
+  console.log(query);
+  return query;
+}
 
 // Add other params such sort…
 // 	Post /listings: add a new document to the db
