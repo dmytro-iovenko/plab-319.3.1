@@ -21,6 +21,6 @@ async function connectDb(database) {
   }
 }
 
-const db = connectDb(database);
+const db = await connectDb(database);
 
 export default db;

@@ -1,0 +1,6 @@
+{
+  "events": {
+    "start": "clear"
+  },
+  "__comment": "https://github.com/remy/nodemon/issues/1318"
+}
