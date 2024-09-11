@@ -24,11 +24,12 @@ app.use((req, res, next) => {
 
 // Route Endpoints:
 // 	Get /listings: Get all listings from the database.
-app.get("/listings", async (req, res) => {
+app.get("/listings", async (req, res, next) => {
   try {
     const collection = db.collection("listingsAndReviews");
-    const results = await collection.find().limit(10).toArray();
-    res.json(results).status(200);
+    const results = collection.find();
+    res.locals = results;
+    next();
   } catch (err) {
     next(err);
   }
@@ -50,9 +51,9 @@ app.get("/listings/query", async (req, res, next) => {
   try {
     const query = getQueryParameters(req.query);
     const collection = db.collection("listingsAndReviews");
-    const results = await collection.find(query).toArray();
-    if (results) res.json(results).status(200);
-    else next();
+    let results = collection.find(query);
+    res.locals = results;
+    next();
   } catch (err) {
     next(err);
   }
@@ -105,7 +106,17 @@ function getQueryParameters(params) {
   return query;
 }
 
-// Add other params such sort…
+// Filter by other params such sort, limit…
+app.use(async (req, res) => {
+  let data = res.locals;
+  if (req.query.sort) data = data.sort(req.query.sort);
+  if (req.query.limit) data = data.limit(Number(req.query.limit));
+  // convert filtered data to an array
+  data = await data.toArray();
+  console.log(data);
+  res.json(data);
+});
+
 // 	Post /listings: add a new document to the db
 // 	Delete /listings/:id : Delete a document using id
 // 	Put /listings/:id : update a document using the body
