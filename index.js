@@ -23,9 +23,13 @@ app.use((req, res, next) => {
 // Route Endpoints:
 // 	Get /listings: Get all listings from the database.
 app.get("/listings", async (req, res) => {
-  const collection = await db.collection("listingsAndReviews");
-  const result = await collection.find().limit(10).toArray();
-  console.log(result);
+  try {
+    const collection = db.collection("listingsAndReviews");
+    const results = await collection.find().limit(10).toArray();
+    res.json(results).status(200);
+  } catch (err) {
+    next(error(400, err))
+  }
 });
 // 	Get /listings/:id: Get a specific listing by its ID.
 // 	Get /listings/query: Get listings based on specific query parameters.
