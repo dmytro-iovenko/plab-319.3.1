@@ -106,15 +106,29 @@ function getQueryParameters(params) {
   return query;
 }
 
-// Filter by other params such sort, limit…
-app.use(async (req, res) => {
-  let data = res.locals;
-  if (req.query.sort) data = data.sort(req.query.sort);
-  if (req.query.limit) data = data.limit(Number(req.query.limit));
-  // convert filtered data to an array
-  data = await data.toArray();
-  console.log(data);
-  res.json(data);
+// Filter by other params such limit…
+app.use(async (req, res, next) => {
+  try {
+    let data = res.locals;
+    // sort data, if necessary
+    if (req.query.sort) {
+      const query = {};
+      req.query.sort.split(",").forEach((p) => {
+        const [key, value] = p.split(":");
+        console.log(key, value);
+        query[key] = value;
+      });
+      data = data.sort(query);
+    }
+    // limit data, if necessary
+    if (req.query.limit) data = data.limit(Number(req.query.limit));
+    // convert filtered data to an array
+    data = await data.toArray();
+    console.log(data);
+    res.json(data);
+  } catch (err) {
+    next(error(400, err));
+  }
 });
 
 // 	Post /listings: add a new document to the db
