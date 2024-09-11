@@ -1,6 +1,7 @@
 import express from "express";
 const app = express();
 import db from "./db.js";
+import error from "./utils/error.js";
 
 const port = 3000;
 
@@ -19,9 +20,10 @@ app.use((req, res, next) => {
   next();
 });
 
-app.use("/", (req,res)=>{
-    throw new Error("Test Error")
-})
+// 404 Middleware
+app.use((req, res) => {
+  throw error(404, "Resource Not Found");
+});
 
 // Error-handling Middleware
 app.use((err, req, res, next) => {
