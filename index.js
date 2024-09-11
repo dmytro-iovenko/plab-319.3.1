@@ -28,10 +28,21 @@ app.get("/listings", async (req, res) => {
     const results = await collection.find().limit(10).toArray();
     res.json(results).status(200);
   } catch (err) {
-    next(error(400, err))
+    next(err);
   }
 });
 // 	Get /listings/:id: Get a specific listing by its ID.
+app.get("/listings/:id", async (req, res, next) => {
+  try {
+    const query = { _id: req.params.id };
+    const collection = db.collection("listingsAndReviews");
+    const result = await collection.findOne(query);
+    if (result) res.json(result).status(200);
+    else next();
+  } catch (err) {
+    next(err);
+  }
+});
 // 	Get /listings/query: Get listings based on specific query parameters.
 
 // Query Parameters:
