@@ -5,7 +5,7 @@ import db from "./db.js";
 const port = 3000;
 
 // Parsing Body Middleware
-app.use(express.json())
+app.use(express.json());
 
 // Logging Middleware
 app.use((req, res, next) => {
@@ -17,6 +17,25 @@ app.use((req, res, next) => {
     console.log(JSON.stringify(req.body));
   }
   next();
+});
+
+app.use("/", (req,res)=>{
+    throw new Error("Test Error")
+})
+
+// Error-handling Middleware
+app.use((err, req, res, next) => {
+  const time = new Date();
+  const status = err.status || 500;
+  res.status(status);
+  res.json({
+    status: status,
+    error: err.message,
+    timestamp: time,
+    path: req.url,
+  });
+  console.error("------");
+  console.error(`${time.toLocaleString()}: ${err.stack}`);
 });
 
 // Run express server
